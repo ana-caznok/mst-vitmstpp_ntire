@@ -38,7 +38,7 @@ print("Validation set samples: ", len(val_data))
 
 
 # iterations
-per_epoch_iteration = 100 #era 1000
+per_epoch_iteration = 1000 #era 1000
 total_iteration = per_epoch_iteration*opt.end_epoch
 
 # loss function
