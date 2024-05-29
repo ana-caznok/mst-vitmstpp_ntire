@@ -78,7 +78,6 @@ class VITMSTPP(nn.Module):
         print(f"Initialized VITMSTPPUNet with MSTPP stages: {mst_size} and normalization {norm}")
     
     def not_4_div_scale(self, X, Y,  x, x_input, x_half, x_quarter ): 
-        print('entrei aqui')
         bq, cq, yq, xq = x_quarter.shape
 
         if yq*4>Y: 
@@ -90,6 +89,10 @@ class VITMSTPP(nn.Module):
             scf_x = X/(xq*4)
         else: 
             scf_x = (xq*4)/X
+        
+        if Y != X: 
+            print('Imagem assimétrica: y=', Y, ' x=',X)
+
 
         print('scale factor:', scf_y, scf_x)
         x_quarter_upsample = torch.nn.functional.interpolate(self.upsample_4(x_quarter), scale_factor=(scf_y, scf_x), mode="nearest")
@@ -108,8 +111,6 @@ class VITMSTPP(nn.Module):
     def forward(self, x_input: torch.Tensor):
         B, C, Y, X = x_input.shape
         assert C == self.C_input, f"Malformed VITMSTPPUNet input: {x_input.shape}, expected {self.C_input} channels"
-        if Y != X: 
-            print('Imagem assimétrica: y=', Y, ' x=',X)
         
         x_input = self.padding(x_input)
         # Convert to "signal boosted RGB" format

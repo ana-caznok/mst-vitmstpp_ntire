@@ -1,0 +1,87 @@
+{
+    "os": "Linux-6.5.0-35-generic-x86_64-with-glibc2.17",
+    "python": "3.8.19",
+    "heartbeatAt": "2024-05-29T20:31:11.514833",
+    "startedAt": "2024-05-29T20:31:10.477330",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--method",
+        "hrnet",
+        "--batch_size",
+        "2",
+        "--end_epoch",
+        "500",
+        "--init_lr",
+        "4e-4",
+        "--outf",
+        "./exp/hrnet-exp2/",
+        "--data_root",
+        "../dataset/",
+        "--patch_size",
+        "128",
+        "--stride",
+        "8",
+        "--gpu_id",
+        "0"
+    ],
+    "state": "running",
+    "program": "train.py",
+    "codePathLocal": "train.py",
+    "codePath": "train_code/train.py",
+    "git": {
+        "remote": "https://github.com/ana-caznok/mst-vitmstpp_ntire.git",
+        "commit": "770d69649b0de474e7ff6b9ffceecaed6a91ecf7"
+    },
+    "email": "a231745@dac.unicamp.br",
+    "root": "/mnt/datassd/mst_toolbox/MST-plus-plus-2",
+    "host": "miclab-X10SLL-HF-CKD",
+    "username": "icasp",
+    "executable": "/mnt/datassd/miniconda3/envs/mst_compare_torch/bin/python",
+    "cpu_count": 4,
+    "cpu_count_logical": 4,
+    "cpu_freq": {
+        "current": 3334.002,
+        "min": 800.0,
+        "max": 3500.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3099.949,
+            "min": 800.0,
+            "max": 3500.0
+        },
+        {
+            "current": 3099.905,
+            "min": 800.0,
+            "max": 3500.0
+        },
+        {
+            "current": 3099.899,
+            "min": 800.0,
+            "max": 3500.0
+        },
+        {
+            "current": 3099.897,
+            "min": 800.0,
+            "max": 3500.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 915.3213348388672,
+            "used": 863.557933807373
+        }
+    },
+    "gpu": "NVIDIA GeForce RTX 3060 Ti",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 3060 Ti",
+            "memory_total": 8589934592
+        }
+    ],
+    "memory": {
+        "total": 31.295703887939453
+    }
+}

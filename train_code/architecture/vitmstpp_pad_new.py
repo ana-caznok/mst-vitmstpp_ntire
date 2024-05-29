@@ -111,6 +111,7 @@ class VITMSTPP_Pad(nn.Module):
     
     def not_4_div_scale(self, X, Y,  x, x_input, x_half, x_quarter ): 
         print('entrei aqui')
+        raise DeprecationWarning("Não quero usar interpolação mais")
         bq, cq, yq, xq = x_quarter.shape
 
         if yq*4>Y: 
@@ -153,7 +154,7 @@ class VITMSTPP_Pad(nn.Module):
             B, C, Y, X = x_input.shape 
             print('Padding feito: y=',Y, 'x=', X )
         
-        if X<512 and X>=256: #caso a imagem seja um patch 482x482 ou 256x256 será feito um padding para deixar a imagem 512x512 e evitar outros dimensionamentos
+        if X<512 and X>=128: #caso a imagem seja um patch 482x482 ou 256x256 será feito um padding para deixar a imagem 512x512 e evitar outros dimensionamentos
             asim = True 
             padding = self.pad_512(X,Y)
             x_input = torch.nn.functional.pad(x_input, padding, mode='reflect')
