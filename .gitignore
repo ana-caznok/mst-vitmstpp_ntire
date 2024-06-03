@@ -4,6 +4,7 @@ dataset/Train_Spec/*
 dataset/Valid_RGB/*
 dataset/Valid_Spec/*
 train_code/wandb/*
+test_develop_code/*
 test_challenge_code/architecture/test_develop_code/*.zip
 visualization
 
