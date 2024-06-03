@@ -154,15 +154,29 @@ class VITMSTPP_Pad(nn.Module):
             B, C, Y, X = x_input.shape 
             print('Padding feito: y=',Y, 'x=', X )
         
-        if X<512 and X>=128: #caso a imagem seja um patch 482x482 ou 256x256 será feito um padding para deixar a imagem 512x512 e evitar outros dimensionamentos
+        if X<512 and X>=256: #caso a imagem seja um patch 482x482 ou 256x256 será feito um padding para deixar a imagem 512x512 e evitar outros dimensionamentos
             asim = True 
             padding = self.pad_512(X,Y)
             x_input = torch.nn.functional.pad(x_input, padding, mode='reflect')
             B, C, Y, X = x_input.shape
 
+        if X<256: #new, para caso a imagem seja menor que 256
+            asim = True 
+            padding_256 = ((256-X)//2, (256-X)//2, (256-Y)//2, (256-Y)//2)
+            x_input = torch.nn.functional.pad(x_input, padding_256, mode='reflect')
+            B, C, Y, X = x_input.shape
+
+            padding = self.pad_512(X,Y)
+            x_input = torch.nn.functional.pad(x_input, padding, mode='reflect')
+            B, C, Y, X = x_input.shape
+            padding = (padding_256[0] + padding[0], 
+                       padding_256[1] + padding[1], 
+                       padding_256[2] + padding[2], 
+                       padding_256[3] + padding[3])
+                        #considerando o padding pra 256 e depois o para 512 
+
         # Convert to "signal boosted RGB" format
     
-
         # If not 1024 input, interpolate in GPU
         scale_Y = 1024/Y
         scale_X = 1024/X
@@ -219,5 +233,5 @@ if __name__ == "__main__":
     vitmstpp = VITMSTPP_Pad()
     # vitmstpp.cuda()
 
-    torchinfo.summary(vitmstpp, input_size=(1, 4, 1024, 1024), device=torch.device("cpu"))
-    torchinfo.summary(vitmstpp, input_size=(1, 4, 512, 512), device=torch.device("cpu"))
+    torchinfo.summary(vitmstpp, input_size=(1, 3, 1024, 1024), device=torch.device("gpu"))
+    torchinfo.summary(vitmstpp, input_size=(1, 3, 128, 128), device=torch.device("gpu"))

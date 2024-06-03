@@ -1,13 +1,11 @@
-*.zip
 *.pth
 dataset/Train_RGB/*
 dataset/Train_Spec/*
 dataset/Valid_RGB/*
 dataset/Valid_Spec/*
-visualization/*.m
-visualization/real_results
-visualization/simulation_results
-
+train_code/wandb/*
+test_challenge_code/architecture/test_develop_code/*.zip
+visualization
 
 
 # Byte-compiled / optimized / DLL files

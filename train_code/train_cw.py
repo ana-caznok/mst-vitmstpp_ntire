@@ -12,7 +12,6 @@ from utils import AverageMeter, initialize_logger, save_checkpoint, record_loss,
     time2file_name, Loss_MRAE, Loss_RMSE, Loss_PSNR
 import datetime
 import wandb
-import time 
 
 
 parser = argparse.ArgumentParser(description="Spectral Recovery Toolbox")
@@ -26,7 +25,6 @@ parser.add_argument("--data_root", type=str, default='../dataset/')
 parser.add_argument("--patch_size", type=int, default=128, help="patch size")
 parser.add_argument("--stride", type=int, default=8, help="stride")
 parser.add_argument("--gpu_id", type=str, default='0', help='path log files')
-parser.add_argument("--wandb", type=bool, default=False, help='log files in wandb')
 opt = parser.parse_args()
 os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
 os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpu_id
@@ -80,25 +78,22 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, total_iteratio
 log_dir = os.path.join(opt.outf, 'train.log')
 logger = initialize_logger(log_dir)
 
-if opt.wandb == True: 
-    f_configurations = {'method': opt.method, 
-                        'batch_size': opt.batch_size, 
-                        'patch_size':opt.patch_size, 
-                        'stride':opt.stride, 
-                        'epoch_end': opt.end_epoch, 
-                        'lr': opt.init_lr,
-                        'train_imgs': train_data.img_num, 
-                        'valid_imgs:':len(val_data)
-                        }
-    run = wandb.init(project="hyperskin-challenge",
-                                reinit=True,
-                                config=f_configurations,
-                                notes="Running experiment",
-                                entity="rainbow-ai",
-                                name=method +'-ntire-' + str(opt.patch_size))
+f_configurations = {'method': opt.method, 
+                    'batch_size': opt.batch_size, 
+                    'patch_size':opt.patch_size, 
+                    'stride':opt.stride, 
+                    'epoch_end': opt.end_epoch, 
+                    'lr': opt.init_lr
+                    }
+run = wandb.init(project="hyperskin-challenge",
+                             reinit=True,
+                             config=f_configurations,
+                             notes="Running experiment",
+                             entity="rainbow-ai",
+                             name=method +'-ntire-' + str(opt.patch_size))
 
-    for k in f_configurations.keys():
-        wandb.config[k] = f_configurations[k]
+for k in f_configurations.keys():
+    wandb.config[k] = f_configurations[k]
 
 # Resume
 resume_file = opt.pretrained_model_path
@@ -116,7 +111,6 @@ def main():
     iteration = 0
     ep=0
     record_mrae_loss = checkpoint_save
-    start = time.time()
 
     while iteration<total_iteration: #vai até o número total de iterações 
         model.train()
@@ -143,23 +137,18 @@ def main():
             iteration = iteration+1
 
             if iteration % 50 == 0:
-                elaps_time = time.time() - start
-                predicted_time = (total_iteration/iteration)*elaps_time
-                time_left = predicted_time - elaps_time
-                print('[epoch:%d/%d][iter:%d/%d],lr=%.9f,train_losses.avg=%.9f, time left=%d,  time passed=%d, predicted time=%d'
-                      % (ep,opt.end_epoch, iteration, total_iteration, lr, losses.avg, time_left, elaps_time, predicted_time))
-                if opt.wandb == True: 
-                    wandb.log({"avg_losses": losses.avg}) #new new
+                print('[epoch:%d/%d][iter:%d/%d],lr=%.9f,train_losses.avg=%.9f'
+                      % (ep,opt.end_epoch, iteration, total_iteration, lr, losses.avg))
+                wandb.log({"avg_losses": losses.avg}) #new new
                 
             if iteration % checkpoint_save ==0: #1000 == 0: a validação está acontecendo mais de uma vez por época! atenção 
                 print('iteration>total_iteration: ', iteration>total_iteration)
                 mrae_loss, rmse_loss, psnr_loss = validate(val_loader, model)
                 print(f'MRAE:{mrae_loss}, RMSE: {rmse_loss}, PNSR:{psnr_loss}')
 
-                if opt.wandb == True: 
-                    wandb.log({"mrae_loss": mrae_loss}) #new
-                    wandb.log({"rmse_loss": rmse_loss}) #new
-                    wandb.log({"psnr_loss": psnr_loss}) #new
+                wandb.log({"mrae_loss": mrae_loss}) #new
+                wandb.log({"rmse_loss": rmse_loss}) #new
+                wandb.log({"psnr_loss": psnr_loss}) #new
 
                 # Save model. O salvamento do modelo também acontece 1x/época 
                 if torch.abs(mrae_loss - record_mrae_loss) < 0.01 or mrae_loss < record_mrae_loss or iteration % 5000 == 0:
@@ -198,12 +187,9 @@ def validate(val_loader, model):
         losses_mrae.update(loss_mrae.data)
         losses_rmse.update(loss_rmse.data)
         losses_psnr.update(loss_psnr.data)
-
-    if opt.wandb == True: 
-        wandb.log({"mrae_val_loss": losses_mrae.avg}) #new
-        wandb.log({"rmse_val_loss": losses_rmse.avg}) #new
-        wandb.log({"psnr_val_loss": losses_psnr.avg}) #new
-        
+    wandb.log({"mrae_val_loss": losses_mrae.avg}) #new
+    wandb.log({"rmse_val_loss": losses_rmse.avg}) #new
+    wandb.log({"psnr_val_loss": losses_psnr.avg}) #new
     return losses_mrae.avg, losses_rmse.avg, losses_psnr.avg
 
 if __name__ == '__main__':
