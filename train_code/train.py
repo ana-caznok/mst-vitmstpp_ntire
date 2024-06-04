@@ -142,7 +142,7 @@ def main():
             losses.update(loss.data)
             iteration = iteration+1
 
-            if iteration % 50 == 0:
+            if iteration % 100 == 0:
                 elaps_time = time.time() - start
                 predicted_time = (total_iteration/iteration)*elaps_time
                 time_left = predicted_time - elaps_time

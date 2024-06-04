@@ -1,8 +1,13 @@
 import torch
 from torch import nn
 from segment_anything import sam_model_registry
-from .MST_Plus_Plus import MST_Plus_Plus
-from unet import DoubleConv
+
+try: 
+    from .MST_Plus_Plus import MST_Plus_Plus
+    from unet import DoubleConv
+except: 
+   from HyperSkinUtils.baseline.MST_Plus_Plus import MST_Plus_Plus 
+   from unet.unet import DoubleConv
 
 
 class DownsampleBatch():
@@ -22,13 +27,13 @@ class VITMSTPP_Pad(nn.Module):
     Deal with the impossibility of working at 1024 in MSTPP with clever use of ViT encoder compression, 
     strided convolutions and unet-like encoding/decoding
     '''
-    def __init__(self, mst_size=6, C_input=3, norm="instance"):
+    def __init__(self, mst_size=6, C_input=3, total_channels=31, norm="instance"):
         '''
         mst_size: stage argument for MSTPP
         '''
         super().__init__()
 
-        total_channels = 31
+        self.total_channels = total_channels
         self.C_input = C_input
 
         # Encoder Compression vit, 1024 -> 512
@@ -46,7 +51,7 @@ class VITMSTPP_Pad(nn.Module):
 
         # Bottleneck at MSTPP
         # self.mstpp = MST_Plus_Plus(in_channels=4 + 4, out_channels=total_channels, n_feat=total_channels, stage=mst_size)
-        self.mstpp = MST_Plus_Plus(in_channels=C_input + self.vit_shape[0], out_channels=total_channels, n_feat=total_channels, stage=mst_size)
+        self.mstpp = MST_Plus_Plus(in_channels=C_input + self.vit_shape[0], out_channels=self.total_channels, n_feat=self.total_channels, stage=mst_size)
 
         # Using Gerard SegNet upsample logic in decoding
         self.upsample_4 = nn.Upsample(scale_factor=4, mode="nearest")
@@ -60,11 +65,11 @@ class VITMSTPP_Pad(nn.Module):
         self.padding = Padder() if False else nn.Identity()
         
         # Decodes concatenation of all encoder outputs
-        self.decoding_convolution = nn.Sequential(DoubleConv(in_ch = total_channels + C_input + 2*self.vit_shape[0], out_ch = total_channels*2, norm=norm, reduce=False, dim='2d'),
-                                                  DoubleConv(in_ch = total_channels*2, out_ch = total_channels, norm=norm, reduce=False, dim='2d'))
+        self.decoding_convolution = nn.Sequential(DoubleConv(in_ch = self.total_channels + C_input + 2*self.vit_shape[0], out_ch = self.total_channels*2, norm=norm, reduce=False, dim='2d'),
+                                                  DoubleConv(in_ch = self.total_channels*2, out_ch = self.total_channels, norm=norm, reduce=False, dim='2d'))
         
         # Linear mapping for final output
-        self.out_conv = nn.Conv2d(in_channels=total_channels, out_channels=total_channels, kernel_size=1, padding=0, stride=1, bias=False)
+        self.out_conv = nn.Conv2d(in_channels=self.total_channels, out_channels=self.total_channels, kernel_size=1, padding=0, stride=1, bias=False)
 
         print(f"Initialized VITMSTPPUNet with MSTPP stages: {mst_size} and normalization {norm}")
     
@@ -108,6 +113,15 @@ class VITMSTPP_Pad(nn.Module):
         padding = (padding_left, padding_right, padding_top, padding_bottom)
 
         return padding
+    
+    def convert2RGB(self, x_input): 
+        # Convert to "signal boosted RGB" format
+        # Attempts at broadcasting didn't work
+        x = x_input[:, :3]
+        for c in range(3):
+            x[:, c:c+1] = (x[:, c:c+1] + x_input[:, 3:4])/2
+        x = x[:, :3]  # remove infrared channel
+        return x 
     
     def not_4_div_scale(self, X, Y,  x, x_input, x_half, x_quarter ): 
         print('entrei aqui')
@@ -186,6 +200,8 @@ class VITMSTPP_Pad(nn.Module):
             if not self.upsample_warning:
                 print("WARNING: VITMSTPPUNET performing interpolation to ViT required 1024 spatial resolution.")
                 self.upsample_warning = True
+            if self.C_input != 3: 
+                x = self.convert2RGB(x)
         else: 
            x = x_input
 
