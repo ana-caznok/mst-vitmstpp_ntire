@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from fvcore.nn import FlopCountAnalysis
+from HyperSkinUtils.hyper_utils import sam_fn
 
 def save_matv73(mat_name, var_name, var):
     hdf5storage.savemat(mat_name, {var_name: var}, format='7.3', store_python_metadata=True)
