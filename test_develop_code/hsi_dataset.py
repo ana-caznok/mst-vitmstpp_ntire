@@ -3,6 +3,7 @@ import numpy as np
 import random
 import cv2
 import h5py
+import glob
 
 class TrainDataset(Dataset):
     def __init__(self, data_root, crop_size, arg=True, bgr2rgb=True, stride=8):
@@ -84,17 +85,20 @@ class ValidDataset(Dataset):
     def __init__(self, data_root, bgr2rgb=True):
         self.hypers = []
         self.bgrs = []
-        hyper_data_path = f'{data_root}/Train_Spec/'
-        bgr_data_path = f'{data_root}/Train_RGB/'
+        hyper_data_path = f'{data_root}/Valid_Spec/'
+        bgr_data_path = f'{data_root}/Valid_RGB/'
         with open(f'{data_root}/split_txt/valid_list.txt', 'r') as fin:
             hyper_list = [line.replace('\n', '.mat') for line in fin]
             bgr_list = [line.replace('mat','jpg') for line in hyper_list]
         hyper_list.sort()
         bgr_list.sort()
-        print(f'len(hyper_valid) of ntire2022 dataset:{len(hyper_list)}')
-        print(f'len(bgr_valid) of ntire2022 dataset:{len(bgr_list)}')
+        #print(f'len(hyper_valid) of ntire2022 dataset:{len(hyper_list)}')
+        #print(f'len(bgr_valid) of ntire2022 dataset:{len(bgr_list)}')
+        #print('hyper data path: ', hyper_data_path)
         for i in range(len(hyper_list)):
             hyper_path = hyper_data_path + hyper_list[i]
+            #print('hyper path: ', hyper_path)
+            #print('glob', glob.glob(hyper_data_path + '*902.mat'))
             if 'mat' not in hyper_path:
                 continue
             with h5py.File(hyper_path, 'r') as mat:

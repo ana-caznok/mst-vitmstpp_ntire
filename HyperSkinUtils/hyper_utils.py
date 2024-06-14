@@ -7,7 +7,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import torch
-from torchmetrics import SpectralAngleMapper, StructuralSimilarityIndexMeasure
+from torchmetrics import StructuralSimilarityIndexMeasure
 
 def initiate_logger(file_dir, name):
     logger = logging.getLogger(name)

@@ -6,6 +6,7 @@ dataset/Valid_Spec/*
 train_code/wandb/*
 test_develop_code/*
 test_challenge_code/architecture/test_develop_code/*.zip
+train_code/exp/*.zip
 visualization
 
 

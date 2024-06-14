@@ -2,8 +2,12 @@ import hdf5storage
 import torch
 import torch.nn as nn
 import numpy as np
+import matplotlib.pyplot as plt 
+import matplotlib
 from fvcore.nn import FlopCountAnalysis
 from HyperSkinUtils.hyper_utils import sam_fn
+from typing import List
+from torchmetrics.image import StructuralSimilarityIndexMeasure
 
 def save_matv73(mat_name, var_name, var):
     hdf5storage.savemat(mat_name, {var_name: var}, format='7.3', store_python_metadata=True)
@@ -69,3 +73,50 @@ def my_summary(test_model, H = 256, W = 256, C = 31, N = 1):
     n_param = sum([p.nelement() for p in model.parameters()])
     print(f'GMac:{flops.total()/(1024*1024*1024)}')
     print(f'Params:{n_param}')
+
+
+class SAMScore(nn.Module):
+    '''
+    Returns the score value from Challenge owners sam_fn
+    '''
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        assert len(target.shape) == 4 and len(pred.shape) == 4, "SAMScore accepts a 4D batch as an input"
+
+        sam_scores: List[torch.Tensor] = []
+        for p, t in zip(pred, target):
+            sam_scores.append(sam_fn(p, t)[0])
+        
+        return torch.stack(sam_scores).mean()
+    
+    def reset(self):
+        pass
+
+class SSIM_Loss(nn.Module):
+    def __init__(self, enable_ssim=True):
+        super().__init__()
+        
+        self.enable_ssim = enable_ssim
+        
+        assert int(enable_ssim) > 0, "Please enable some loss"
+        
+        self.ssim = StructuralSimilarityIndexMeasure()
+
+    def forward(self, pred, target):
+        loss = 0
+        pred += 1e-5
+        target += 1e-5
+        
+        if self.enable_ssim:
+            loss = self.ssim(pred, target)
+        
+        return loss
+    
+    def reset(self):
+        
+        self.ssim.reset()
+
+    def __str__(self):
+        return f"MRAESSIMSAMLoss - SSIM: {self.enable_ssim}"
