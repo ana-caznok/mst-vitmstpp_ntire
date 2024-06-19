@@ -10,6 +10,8 @@ from .MST import MST
 from .MST_Plus_Plus import MST_Plus_Plus
 from .Restormer import Restormer
 from .AWAN import AWAN
+from .vitmstpp import VITMSTPP
+from .vitmstpp_pad_new import VITMSTPP_Pad
 
 def model_generator(method, pretrained_model_path=None):
     if method == 'mirnet':
@@ -34,6 +36,10 @@ def model_generator(method, pretrained_model_path=None):
         model = HSCNN_Plus().cuda()
     elif method == 'awan':
         model = AWAN().cuda()
+    elif method == 'vitmstpp':
+        model = VITMSTPP().cuda()
+    elif method == 'vitmstpp_pad':
+        model = VITMSTPP_Pad().cuda()
     else:
         print(f'Method {method} is not defined !!!!')
     if pretrained_model_path is not None:

@@ -92,8 +92,8 @@ class ValidDataset(Dataset):
             bgr_list = [line.replace('mat','jpg') for line in hyper_list]
         hyper_list.sort()
         bgr_list.sort()
-        #print(f'len(hyper_valid) of ntire2022 dataset:{len(hyper_list)}')
-        #print(f'len(bgr_valid) of ntire2022 dataset:{len(bgr_list)}')
+        print(f'len(hyper_valid) of ntire2022 dataset:{len(hyper_list)}')
+        print(f'len(bgr_valid) of ntire2022 dataset:{len(bgr_list)}')
         #print('hyper data path: ', hyper_data_path)
         for i in range(len(hyper_list)):
             hyper_path = hyper_data_path + hyper_list[i]
