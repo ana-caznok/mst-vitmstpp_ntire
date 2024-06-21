@@ -18,12 +18,20 @@ parser.add_argument('--data_root', type=str, default='../dataset/')
 parser.add_argument('--method', type=str, default='mst_plus_plus')
 parser.add_argument('--pretrained_model_path', type=str, default='./model_zoo/mst_plus_plus.pth')
 parser.add_argument('--outf', type=str, default='./exp/mst_plus_plus/')
+parser.add_argument('--no_crop', action='store_true', help="Do not crop the image")
 parser.add_argument("--gpu_id", type=str, default='0')
-parser.add_argument("--crop", type=bool, default=True)
+
 
 opt = parser.parse_args()
 os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
 os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpu_id
+
+if opt.no_crop:
+    print("No cropping will be done.")
+    crop = False
+else:
+    print("Cropping the image.")
+    crop = True
 
 if not os.path.exists(opt.outf):
     os.makedirs(opt.outf)
@@ -72,7 +80,7 @@ def validate(val_loader, model):
                 loss_psnr = criterion_psnr(output[:, :, 10:-10, 10:-10], target[:, :, 128:-128, 128:-128])
             else:
                 output = model(input)
-                if opt.crop ==True: 
+                if crop ==True: 
                     loss_mrae = criterion_mrae(output[:, :, 128:-128, 128:-128], target[:, :, 128:-128, 128:-128])
                     loss_rmse = criterion_rmse(output[:, :, 128:-128, 128:-128], target[:, :, 128:-128, 128:-128])
                     loss_psnr = criterion_psnr(output[:, :, 128:-128, 128:-128], target[:, :, 128:-128, 128:-128])
