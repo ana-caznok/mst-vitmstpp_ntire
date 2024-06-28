@@ -18,3 +18,7 @@ python test.py --data_root /mnt/datassd/icasp/data/NTIRE/  --method vitmstpp --p
 python test.py --data_root /mnt/datassd/icasp/data/NTIRE/  --method vitmstpp_pad --pretrained_model_path /mnt/datassd/mst_toolbox/MST-plus-plus-2/train_code/exp/vitmstpp-pad_exp4/net_58epoch.pth --outf ./exp/vitmstpp-pad_exp4/  --gpu_id 0
 
 python test.py --data_root /mnt/datassd/icasp/data/NTIRE/  --method vitmstpp_pad --pretrained_model_path /mnt/datassd/mst_toolbox/MST-plus-plus-2/train_code/exp/vitmstpp-pad-482_exp4/net_185epoch.pth --outf ./exp/vitmstpp-pad-482_exp4/  --gpu_id 0
+
+python test.py --data_root /mnt/datassd/icasp/data/NTIRE/  --method restormer --pretrained_model_path /mnt/datassd/mst_toolbox/MST-plus-plus-2/train_code/exp/restormer_exp4/restormer/net_140epoch.pth --outf ./exp/restormer_exp4/  --gpu_id 0
+
+python test.py --data_root /mnt/datassd/icasp/data/NTIRE/  --method hscnn_plus --pretrained_model_path /mnt/datassd/mst_toolbox/MST-plus-plus-2/train_code/exp/hscnn_exp4/net_156epoch.pth --outf ./exp/hscnn_exp4/  --gpu_id 0
