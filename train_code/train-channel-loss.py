@@ -95,7 +95,7 @@ if opt.wandb == True:
                                 config=f_configurations,
                                 notes="Running experiment",
                                 entity="rainbow-ai",
-                                name=method +'-ntire-' + str(opt.patch_size))
+                                name=method +'-ntire-' + str(opt.patch_size)+'-cw')
 
     for k in f_configurations.keys():
         wandb.config[k] = f_configurations[k]
