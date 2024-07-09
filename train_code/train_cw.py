@@ -10,8 +10,10 @@ from hsi_dataset import TrainDataset, ValidDataset
 from architecture import *
 from utils import AverageMeter, initialize_logger, save_checkpoint, record_loss, \
     time2file_name, Loss_MRAE, Loss_RMSE, Loss_PSNR
+from utils_cw import ChannelLoss
 import datetime
 import wandb
+import numpy as np
 
 
 parser = argparse.ArgumentParser(description="Spectral Recovery Toolbox")
@@ -37,6 +39,11 @@ val_data = ValidDataset(data_root=opt.data_root, bgr2rgb=True)
 print("Validation set samples: ", len(val_data))
 
 # iterations
+
+#per_epoch_iteration = 50 #era 1000
+#total_iteration = per_epoch_iteration*opt.end_epoch
+#checkpoint_save = per_epoch_iteration//2
+
 per_epoch_iteration = len(train_data)//opt.batch_size #era 1000
 total_iteration = per_epoch_iteration*opt.end_epoch
 checkpoint_save = per_epoch_iteration//2
@@ -44,10 +51,14 @@ checkpoint_save = per_epoch_iteration//2
 print('ITERATIONS PER EPOCH: ', per_epoch_iteration)
 print('TOTAL ITERATION: ', total_iteration)
 
+
+CHANNEL_WEIGHTS = torch.tensor(np.ones(31)) #[None]*31
+
 # loss function
 criterion_mrae = Loss_MRAE()
 criterion_rmse = Loss_RMSE()
 criterion_psnr = Loss_PSNR()
+criterion_cw = ChannelLoss(channel_weights=CHANNEL_WEIGHTS)
 
 # model
 pretrained_model_path = opt.pretrained_model_path
@@ -120,6 +131,8 @@ def main():
         val_loader = DataLoader(dataset=val_data, batch_size=1, shuffle=False, num_workers=2, pin_memory=True)
         print('len train loader: ', len(train_loader))
         ep=ep+1
+        criterion_cw = ChannelLoss(channel_weights=CHANNEL_WEIGHTS)
+        print(CHANNEL_WEIGHTS)
          
         for i, (images, labels) in enumerate(train_loader):
             labels = labels.cuda()
@@ -129,7 +142,8 @@ def main():
             lr = optimizer.param_groups[0]['lr']
             optimizer.zero_grad()
             output = model(images)
-            loss = criterion_mrae(output, labels)
+            #loss = criterion_mrae(output, labels)
+            loss = criterion_cw(output,labels)
             loss.backward()
             optimizer.step()
             scheduler.step()
@@ -143,24 +157,25 @@ def main():
                 
             if iteration % checkpoint_save ==0: #1000 == 0: a validação está acontecendo mais de uma vez por época! atenção 
                 print('iteration>total_iteration: ', iteration>total_iteration)
-                mrae_loss, rmse_loss, psnr_loss = validate(val_loader, model)
-                print(f'MRAE:{mrae_loss}, RMSE: {rmse_loss}, PNSR:{psnr_loss}')
+                mrae_loss, rmse_loss, psnr_loss, loss_cw = validate(val_loader, model)
+                print(f'MRAE:{mrae_loss}, RMSE: {rmse_loss}, PNSR:{psnr_loss}, CHANNEL_LOSS: {loss_cw}')
 
                 wandb.log({"mrae_loss": mrae_loss}) #new
                 wandb.log({"rmse_loss": rmse_loss}) #new
                 wandb.log({"psnr_loss": psnr_loss}) #new
+                wandb.log({"channel_loss": loss_cw}) #NEW
 
                 # Save model. O salvamento do modelo também acontece 1x/época 
-                if torch.abs(mrae_loss - record_mrae_loss) < 0.01 or mrae_loss < record_mrae_loss or iteration % 5000 == 0:
+                if torch.abs(loss_cw - record_mrae_loss) < 0.01 or loss_cw < record_mrae_loss or iteration % 5000 == 0:
                     print(f'Saving to {opt.outf}')
                     save_checkpoint(opt.outf, (iteration // checkpoint_save), iteration, model, optimizer) #era 1000
                     if mrae_loss < record_mrae_loss:
-                        record_mrae_loss = mrae_loss
-                        wandb.log({"best_val_loss": record_mrae_loss}) #new
+                        record_mrae_loss = loss_cw
+                        wandb.log({"best_val_loss": loss_cw}) #new
                 # print loss
                 
-                print(" Iter[%06d], Epoch[%06d], learning rate : %.9f, Train MRAE: %.9f, Test MRAE: %.9f, "
-                      "Test RMSE: %.9f, Test PSNR: %.9f " % (iteration, iteration//per_epoch_iteration, lr, losses.avg, mrae_loss, rmse_loss, psnr_loss)) #era 1000
+                print(" Iter[%06d], Epoch[%06d], learning rate : %.9f, Train ChannelLoss: %.9f, Test ChannelLoss: %.9f, "
+                      "Test RMSE: %.9f, Test PSNR: %.9f " % (iteration, iteration//per_epoch_iteration, lr, losses.avg, loss_cw, rmse_loss, psnr_loss)) #era 1000
                 logger.info(" Iter[%06d], Epoch[%06d], learning rate : %.9f, Train Loss: %.9f, Test MRAE: %.9f, "
                       "Test RMSE: %.9f, Test PSNR: %.9f " % (iteration, iteration//per_epoch_iteration, lr, losses.avg, mrae_loss, rmse_loss, psnr_loss)) #era 1000
                 #if iteration>total_iteration: 
@@ -174,6 +189,9 @@ def validate(val_loader, model):
     losses_mrae = AverageMeter()
     losses_rmse = AverageMeter()
     losses_psnr = AverageMeter()
+    losses_cw   = AverageMeter()
+    channel_error = torch.tensor(np.zeros((len(val_loader), 31)))
+
     for i, (input, target) in enumerate(val_loader):
         input = input.cuda()
         target = target.cuda()
@@ -183,14 +201,37 @@ def validate(val_loader, model):
             loss_mrae = criterion_mrae(output[:, :, 128:-128, 128:-128], target[:, :, 128:-128, 128:-128])
             loss_rmse = criterion_rmse(output[:, :, 128:-128, 128:-128], target[:, :, 128:-128, 128:-128])
             loss_psnr = criterion_psnr(output[:, :, 128:-128, 128:-128], target[:, :, 128:-128, 128:-128])
+            loss_cw = criterion_cw(output[:, :, 128:-128, 128:-128], target[:, :, 128:-128, 128:-128])
+
+            pixel_diff = output - target
+
+            spectral_diff = torch.mean(pixel_diff,(2,3))
+
+            channel_error[i,:] = spectral_diff
+
+            
         # record loss
         losses_mrae.update(loss_mrae.data)
         losses_rmse.update(loss_rmse.data)
         losses_psnr.update(loss_psnr.data)
+        losses_cw.update(loss_cw.data)
+    
+    CHANNEL_WEIGHTS = torch.mean(channel_error,0)
+    CHANNEL_WEIGHTS = (CHANNEL_WEIGHTS - torch.min(CHANNEL_WEIGHTS))/(torch.max(CHANNEL_WEIGHTS)- torch.min(CHANNEL_WEIGHTS))
+    c_min = torch.argmin(CHANNEL_WEIGHTS)
+    CHANNEL_WEIGHTS[c_min] = 0.05
+    CHANNEL_WEIGHTS = CHANNEL_WEIGHTS.tolist()
+    print('CHANNEL_WEIGHTS:')
+    print(CHANNEL_WEIGHTS)
+
+
+    assert len(CHANNEL_WEIGHTS) == 31
     wandb.log({"mrae_val_loss": losses_mrae.avg}) #new
     wandb.log({"rmse_val_loss": losses_rmse.avg}) #new
     wandb.log({"psnr_val_loss": losses_psnr.avg}) #new
-    return losses_mrae.avg, losses_rmse.avg, losses_psnr.avg
+    wandb.log({"channel_val_loss": losses_cw.avg})
+
+    return losses_mrae.avg, losses_rmse.avg, losses_psnr.avg, losses_cw.avg
 
 if __name__ == '__main__':
     main()
