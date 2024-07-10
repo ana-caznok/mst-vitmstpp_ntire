@@ -51,8 +51,10 @@ checkpoint_save = per_epoch_iteration
 print('ITERATIONS PER EPOCH: ', per_epoch_iteration)
 print('TOTAL ITERATION: ', total_iteration)
 
-
-CHANNEL_WEIGHTS = torch.tensor(np.ones(31)) #[None]*31
+try: 
+    print(CHANNEL_WEIGHTS)
+except: 
+    CHANNEL_WEIGHTS = torch.tensor(np.ones(31)) #[None]*31
 
 # loss function
 criterion_mrae = Loss_MRAE()
@@ -96,6 +98,11 @@ f_configurations = {'method': opt.method,
                     'epoch_end': opt.end_epoch, 
                     'lr': opt.init_lr
                     }
+try: 
+    f_configurations['pretrained'] = opt.pretrained_model_path
+except: 
+    f_configurations['pretrained'] = 'None'
+
 run = wandb.init(project="hyperskin-challenge",
                              reinit=True,
                              config=f_configurations,
@@ -121,7 +128,7 @@ def main():
     cudnn.benchmark = True
     iteration = 0
     ep=0
-    record_mrae_loss = checkpoint_save
+    record_loss = checkpoint_save
 
     while iteration<total_iteration: #vai até o número total de iterações 
         model.train()
@@ -132,7 +139,7 @@ def main():
         print('len train loader: ', len(train_loader))
         ep=ep+1
         criterion_cw = ChannelLoss(channel_weights=CHANNEL_WEIGHTS)
-        print(CHANNEL_WEIGHTS)
+        print('CHANNEL WEIGHTS:', CHANNEL_WEIGHTS)
          
         for i, (images, labels) in enumerate(train_loader):
             labels = labels.cuda()
@@ -166,11 +173,11 @@ def main():
                 wandb.log({"channel_loss": loss_cw}) #NEW
 
                 # Save model. O salvamento do modelo também acontece 1x/época 
-                if torch.abs(loss_cw - record_mrae_loss) < 0.01 or loss_cw < record_mrae_loss or iteration % 5000 == 0:
+                if torch.abs(loss_cw - record_loss) < 0.005 or loss_cw < record_loss:
                     print(f'Saving to {opt.outf}')
                     save_checkpoint(opt.outf, (iteration // checkpoint_save), iteration, model, optimizer) #era 1000
-                    if mrae_loss < record_mrae_loss:
-                        record_mrae_loss = loss_cw
+                    if mrae_loss < record_loss:
+                        record_loss = loss_cw
                         wandb.log({"best_val_loss": loss_cw}) #new
                 # print loss
                 
