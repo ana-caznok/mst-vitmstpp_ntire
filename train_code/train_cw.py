@@ -46,7 +46,7 @@ print("Validation set samples: ", len(val_data))
 
 per_epoch_iteration = len(train_data)//opt.batch_size #era 1000
 total_iteration = per_epoch_iteration*opt.end_epoch
-checkpoint_save = per_epoch_iteration//2
+checkpoint_save = per_epoch_iteration
 
 print('ITERATIONS PER EPOCH: ', per_epoch_iteration)
 print('TOTAL ITERATION: ', total_iteration)
@@ -157,7 +157,7 @@ def main():
                 
             if iteration % checkpoint_save ==0: #1000 == 0: a validação está acontecendo mais de uma vez por época! atenção 
                 print('iteration>total_iteration: ', iteration>total_iteration)
-                mrae_loss, rmse_loss, psnr_loss, loss_cw = validate(val_loader, model)
+                mrae_loss, rmse_loss, psnr_loss, loss_cw, CHANNEL_WEIGHTS = validate(val_loader, model)
                 print(f'MRAE:{mrae_loss}, RMSE: {rmse_loss}, PNSR:{psnr_loss}, CHANNEL_LOSS: {loss_cw}')
 
                 wandb.log({"mrae_loss": mrae_loss}) #new
@@ -231,7 +231,7 @@ def validate(val_loader, model):
     wandb.log({"psnr_val_loss": losses_psnr.avg}) #new
     wandb.log({"channel_val_loss": losses_cw.avg})
 
-    return losses_mrae.avg, losses_rmse.avg, losses_psnr.avg, losses_cw.avg
+    return losses_mrae.avg, losses_rmse.avg, losses_psnr.avg, losses_cw.avg, CHANNEL_WEIGHTS
 
 if __name__ == '__main__':
     main()
