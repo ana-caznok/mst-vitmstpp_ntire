@@ -50,12 +50,9 @@ checkpoint_save = per_epoch_iteration
 
 print('ITERATIONS PER EPOCH: ', per_epoch_iteration)
 print('TOTAL ITERATION: ', total_iteration)
-
-try: 
-    print(CHANNEL_WEIGHTS)
-except: 
-    CHANNEL_WEIGHTS = torch.tensor(np.ones(31)) #[None]*31
-
+global CHANNEL_WEIGHTS
+CHANNEL_WEIGHTS = torch.tensor(np.ones(31)) #[None]*31
+print('channel weights: ', CHANNEL_WEIGHTS)
 # loss function
 criterion_mrae = Loss_MRAE()
 criterion_rmse = Loss_RMSE()
@@ -100,15 +97,17 @@ f_configurations = {'method': opt.method,
                     }
 try: 
     f_configurations['pretrained'] = opt.pretrained_model_path
+    pretrain = 'pretrained'
 except: 
     f_configurations['pretrained'] = 'None'
+    pretrain = ' '
 
 run = wandb.init(project="hyperskin-challenge",
                              reinit=True,
                              config=f_configurations,
                              notes="Running experiment",
                              entity="rainbow-ai",
-                             name=method +'-ntire-' + str(opt.patch_size) + '-cw')
+                             name=method +'-ntire-' + str(opt.patch_size) + '-cw-' + pretrain)
 
 for k in f_configurations.keys():
     wandb.config[k] = f_configurations[k]
@@ -160,11 +159,12 @@ def main():
             if iteration % 50 == 0:
                 print('[epoch:%d/%d][iter:%d/%d],lr=%.9f,train_losses.avg=%.9f'
                       % (ep,opt.end_epoch, iteration, total_iteration, lr, losses.avg))
-                wandb.log({"avg_losses": losses.avg}) #new new
+                wandb.log({"avg_losses": losses.avg})
+                wandb.log({'loss': loss}) #new new
                 
             if iteration % checkpoint_save ==0: #1000 == 0: a validação está acontecendo mais de uma vez por época! atenção 
                 print('iteration>total_iteration: ', iteration>total_iteration)
-                mrae_loss, rmse_loss, psnr_loss, loss_cw, CHANNEL_WEIGHTS = validate(val_loader, model)
+                mrae_loss, rmse_loss, psnr_loss, loss_cw = validate(val_loader, model)
                 print(f'MRAE:{mrae_loss}, RMSE: {rmse_loss}, PNSR:{psnr_loss}, CHANNEL_LOSS: {loss_cw}')
 
                 wandb.log({"mrae_loss": mrae_loss}) #new
@@ -173,9 +173,9 @@ def main():
                 wandb.log({"channel_loss": loss_cw}) #NEW
 
                 # Save model. O salvamento do modelo também acontece 1x/época 
-                if torch.abs(loss_cw - record_loss) < 0.005 or loss_cw < record_loss:
+                if loss_cw < record_loss or iteration%10000==0:
                     print(f'Saving to {opt.outf}')
-                    save_checkpoint(opt.outf, (iteration // checkpoint_save), iteration, model, optimizer) #era 1000
+                    save_checkpoint(opt.outf, (iteration//per_epoch_iteration), iteration, model, optimizer) #era 1000
                     if mrae_loss < record_loss:
                         record_loss = loss_cw
                         wandb.log({"best_val_loss": loss_cw}) #new
@@ -192,6 +192,7 @@ def main():
 
 # Validate
 def validate(val_loader, model):
+    global CHANNEL_WEIGHTS
     model.eval()
     losses_mrae = AverageMeter()
     losses_rmse = AverageMeter()
@@ -238,7 +239,7 @@ def validate(val_loader, model):
     wandb.log({"psnr_val_loss": losses_psnr.avg}) #new
     wandb.log({"channel_val_loss": losses_cw.avg})
 
-    return losses_mrae.avg, losses_rmse.avg, losses_psnr.avg, losses_cw.avg, CHANNEL_WEIGHTS
+    return losses_mrae.avg, losses_rmse.avg, losses_psnr.avg, losses_cw.avg
 
 if __name__ == '__main__':
     main()
