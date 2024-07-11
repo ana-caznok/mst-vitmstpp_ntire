@@ -27,3 +27,7 @@ python test.py --data_root /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/dataset/ 
 
 python test.py --data_root /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/dataset/  --method vitmstpp_pad --pretrained_model_path /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/train_code/exp/vitmstpp_pad-exp4_cw/2024_07_09_12_01_58/net_152epoch.pth --outf ./exp/vitmstpp-pad-482_exp4_cw/  --gpu_id 0
 
+python test.py --data_root /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/dataset/  --method vitmstpp_pad --pretrained_model_path /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/train_code/exp/vitmstpp_pad-exp4_cw/2024_07_10_16_07_09/net_50epoch.pth --outf ./exp/vitmstpp-pad-482_exp4_cw-pretrained/  --gpu_id 0
+
+train_code/exp/vitmstpp_pad-exp4_cw/2024_07_10_16_07_09/net_50epoch.pth
+

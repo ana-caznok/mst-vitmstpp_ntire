@@ -73,6 +73,8 @@ def my_summary(test_model, H = 256, W = 256, C = 31, N = 1):
     n_param = sum([p.nelement() for p in model.parameters()])
     print(f'GMac:{flops.total()/(1024*1024*1024)}')
     print(f'Params:{n_param}')
+    gmac = flops.total()/(1024*1024*1024)
+    return n_param, gmac
 
 
 class SAMScore(nn.Module):
