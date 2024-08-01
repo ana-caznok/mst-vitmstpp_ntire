@@ -6,7 +6,11 @@ dataset/Valid_Spec/*
 dataset/Valid*
 dataset/Trai*
 train_code/wandb/*
-test_develop_code/*
+test_develop_code/exp/*
+test_develop_code/architecture/*
+test_develop_code/sam/*
+test_develop_code/HyperSkinUtils/*
+test_challenge_code/unet.py
 test_challenge_code/architecture/test_develop_code/*.zip
 train_code/exp/*.zip
 visualization
