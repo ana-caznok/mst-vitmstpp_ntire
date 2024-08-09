@@ -4,9 +4,10 @@ import argparse
 import os
 import torch.backends.cudnn as cudnn
 from architecture import *
-from utils import AverageMeter, save_matv73, Loss_MRAE, Loss_RMSE, Loss_PSNR, SAMScore, SSIM_Loss
+from utils import AverageMeter, save_matv73, Loss_MRAE, Loss_RMSE, Loss_PSNR, SAMScore, SSIM_Loss, gpu_tensors_to_numpy, save_dict_to_h5, save_dict_to_h5_file
 from hsi_dataset import TrainDataset, ValidDataset
 from torch.utils.data import DataLoader
+import json
 
 def warn(*args, **kwargs):
     pass
@@ -60,7 +61,7 @@ with open(f'{opt.data_root}/split_txt/valid_list.txt', 'r') as fin:
     hyper_list = [line.replace('\n', '.mat') for line in fin]
 hyper_list.sort()
 var_name = 'cube'
-def validate(val_loader, model):
+def validate(val_loader, model, my_method):
     model.eval()
     losses_mrae = AverageMeter()
     losses_rmse = AverageMeter()
@@ -106,7 +107,19 @@ def validate(val_loader, model):
         result = np.maximum(result, 0)
         mat_name = hyper_list[i]
         mat_dir = os.path.join(opt.outf, mat_name)
-        save_matv73(mat_dir, var_name, result)
+        #save_matv73(mat_dir, var_name, result)
+    
+    all_dicts = {'sam':dict(zip(hyper_list, gpu_tensors_to_numpy(losses_sam.all))), 
+                 'ssim': dict(zip(hyper_list, gpu_tensors_to_numpy(losses_ssim.all))),
+                 'mrae': dict(zip(hyper_list, gpu_tensors_to_numpy(losses_mrae.all))),
+                 'rmse': dict(zip(hyper_list, gpu_tensors_to_numpy(losses_rmse.all))),
+                 'psnr': dict(zip(hyper_list, gpu_tensors_to_numpy(losses_psnr.all)))
+                  }
+    print(dict(zip(hyper_list, gpu_tensors_to_numpy(losses_sam.all))))
+
+    print(gpu_tensors_to_numpy(losses_sam.all))
+
+    save_dict_to_h5_file(all_dicts,'exp/' + my_method + '_dicts.h5')
 
     return losses_mrae.avg, losses_rmse.avg, losses_psnr.avg, losses_sam.avg, losses_ssim.avg
 
@@ -115,5 +128,5 @@ if __name__ == '__main__':
     pretrained_model_path = opt.pretrained_model_path
     method = opt.method
     model = model_generator(method, pretrained_model_path).cuda()
-    mrae, rmse, psnr, sam, ssim = validate(val_loader, model)
+    mrae, rmse, psnr, sam, ssim = validate(val_loader, model, opt.method)
     print(f'method:{method}, mrae:{mrae}, rmse:{rmse}, psnr:{psnr}, sam: {sam}, ssim: {ssim}')

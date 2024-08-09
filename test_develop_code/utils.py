@@ -8,6 +8,30 @@ from fvcore.nn import FlopCountAnalysis
 from HyperSkinUtils.hyper_utils import sam_fn
 from typing import List
 from torchmetrics.image import StructuralSimilarityIndexMeasure
+import h5py
+
+def save_dict_to_h5(group, dictionary):
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            # Create a subgroup for the nested dictionary
+            subgroup = group.create_group(key)
+            save_dict_to_h5(subgroup, value)
+        else:
+            # Convert the value to a dataset
+            group.create_dataset(key, data=value)
+
+def save_dict_to_h5_file(dictionary, filename):
+    with h5py.File(filename, 'w') as h5file:
+        save_dict_to_h5(h5file, dictionary)
+
+def gpu_tensors_to_numpy(tensor_list):
+    numpy_list = []
+    for tensor in tensor_list:
+        # Check if the tensor is on GPU
+        if tensor.is_cuda:
+            tensor = tensor.cpu()  # Move tensor to CPU
+        numpy_list.append(float(tensor.numpy()))  # Convert tensor to NumPy array
+    return numpy_list
 
 def save_matv73(mat_name, var_name, var):
     hdf5storage.savemat(mat_name, {var_name: var}, format='7.3', store_python_metadata=True)
@@ -15,6 +39,7 @@ def save_matv73(mat_name, var_name, var):
 class AverageMeter(object):
     def __init__(self):
         self.reset()
+        self.all = []
 
     def reset(self):
         self.val = 0
@@ -23,6 +48,7 @@ class AverageMeter(object):
         self.count = 0
 
     def update(self, val, n=1):
+        self.all.append(val)
         self.val = val
         self.sum += val * n
         self.count += n

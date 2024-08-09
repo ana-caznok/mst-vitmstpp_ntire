@@ -31,3 +31,14 @@ python test.py --data_root /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/dataset/ 
 
 train_code/exp/vitmstpp_pad-exp4_cw/2024_07_10_16_07_09/net_50epoch.pth
 
+python test.py --data_root /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/dataset/  --method hscnn_plus --pretrained_model_path /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/train_code/exp/hscnn_plus-exp4/2024_06_24_15_25_41/net_156epoch.pth --outf ./exp/hscnn_exp4/  --gpu_id 0
+
+python test.py --data_root /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/dataset/  --method restormer --pretrained_model_path /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/train_code/exp/restormer-exp4/2024_06_20_09_06_22/net_140epoch.pth --outf ./exp/restormer_exp4/  --gpu_id 0        
+
+python test.py --data_root /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/dataset/  --method mst_plus_plus --pretrained_model_path /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/train_code/exp/mst_plus_plus-exp4/2024_06_07_17_40_44/net_196epoch.pth --outf ./exp/mst_plus_plus_exp4/  --gpu_id 0        
+
+python test.py --data_root /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/dataset/  --method vitmstpp_pad --pretrained_model_path /mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/train_code/exp/vitmstpp_pad-exp4_cw/2024_07_10_16_07_09/net_50epoch.pth --outf ./exp/vitmstpp-pad-482_exp4_cw-pretrained/  --gpu_id 0
+
+train_code/exp/mst_plus_plus-exp4/2024_06_07_17_40_44/net_196epoch.pth
+train_code/exp/restormer-exp4/2024_06_20_09_06_22/net_140epoch.pth
+/mnt/datassd/mst_toolbox/mst-vitmstpp_ntire/train_code/exp/hscnn_plus-exp4/2024_06_24_15_25_41/net_156epoch.pth
